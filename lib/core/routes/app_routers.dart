@@ -1,9 +1,10 @@
 import 'package:go_router/go_router.dart';
+import 'package:vender_app/features/add_product/pages/add_product_page.dart';
 import 'package:vender_app/features/auth/pages/forgot_password_page.dart';
 import 'package:vender_app/features/auth/pages/login_page.dart';
 import 'package:vender_app/features/auth/pages/singup_page.dart';
 import 'package:vender_app/features/auth/pages/splash_page.dart';
-import 'package:vender_app/features/dashboard/pages/dashboard_page.dart';
+import 'package:vender_app/features/navigation/pages/main_navigation_page.dart';
 import 'package:vender_app/features/shop/pages/approval_pending_page.dart';
 import 'package:vender_app/features/shop/pages/shop_block_page.dart';
 import 'package:vender_app/features/shop/pages/shop_rejected_page.dart';
@@ -39,7 +40,7 @@ class AppRouter {
 
       GoRoute(
         path: AppRoutes.dashboard,
-        builder: (context, state) => const DashboardPage(),
+        builder: (context, state) => const MainNavigationPage(),
       ),
 
       GoRoute(
@@ -60,6 +61,11 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.shopBlocked,
         builder: (context, state) => const ShopBlockedPage(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.addProducts,
+        builder: (context, state) => const AddProductPage(),
       ),
     ],
   );
