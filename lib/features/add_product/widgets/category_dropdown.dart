@@ -1,7 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
-
-import '../models/category_model.dart';
+import 'package:vender_app/shared/models/category_model.dart';
 
 class CategoryDropdown extends StatelessWidget {
   const CategoryDropdown({

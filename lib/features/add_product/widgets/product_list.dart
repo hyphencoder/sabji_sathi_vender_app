@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vender_app/shared/models/product_model.dart';
 
-import '../models/product_model.dart';
 import '../providers/add_product_provider.dart';
 import 'product_tile.dart';
 import 'selected_product_bottom_sheet.dart';

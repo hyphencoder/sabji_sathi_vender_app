@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vender_app/core/utils/storage_helper.dart';
-
-import '../models/product_model.dart';
+import 'package:vender_app/shared/models/product_model.dart';
 
 class ProductTile extends StatelessWidget {
   const ProductTile({super.key, required this.product, this.onAdd});

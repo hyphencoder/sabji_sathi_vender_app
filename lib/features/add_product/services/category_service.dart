@@ -1,6 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../models/category_model.dart';
+import 'package:vender_app/shared/models/category_model.dart';
 
 class CategoryService {
   CategoryService();

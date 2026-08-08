@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:vender_app/core/utils/storage_helper.dart';
-
-import '../models/product_model.dart';
+import 'package:vender_app/shared/models/product_model.dart';
 
 class SelectedProductBottomSheet extends StatefulWidget {
   const SelectedProductBottomSheet({
     super.key,
     required this.product,
     required this.onSave,
+    this.initialPrice,
+    this.initialStock,
+    this.initialAvailability,
   });
 
   final ProductModel product;
+
+  final double? initialPrice;
+  final int? initialStock;
+  final bool? initialAvailability;
 
   final Future<void> Function({
     required double sellingPrice,
@@ -33,6 +39,19 @@ class _SelectedProductBottomSheetState
 
   bool isAvailable = true;
   bool isSaving = false;
+
+  bool get isEdit => widget.initialPrice != null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _priceController.text = widget.initialPrice?.toString() ?? '';
+
+    _stockController.text = widget.initialStock?.toString() ?? '';
+
+    isAvailable = widget.initialAvailability ?? true;
+  }
 
   @override
   void dispose() {
@@ -175,6 +194,7 @@ class _SelectedProductBottomSheetState
                     return null;
                   },
                 ),
+
                 const SizedBox(height: 20),
 
                 SwitchListTile(
@@ -236,7 +256,7 @@ class _SelectedProductBottomSheetState
                               color: Colors.white,
                             ),
                           )
-                        : const Text("Save Product"),
+                        : Text(isEdit ? "Update Product" : "Save Product"),
                   ),
                 ),
 

@@ -1,18 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vender_app/core/routes/app_routes.dart';
-import 'package:vender_app/features/products/data/dummy_products.dart';
+import 'package:vender_app/features/add_product/widgets/selected_product_bottom_sheet.dart';
+import 'package:vender_app/features/products/providers/product_provider.dart';
 
 import '../../dashboard/widgets/dashboard_header.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_filter_chip.dart';
 import '../widgets/product_search_bar.dart';
 
-class ProductsPage extends StatelessWidget {
+class ProductsPage extends ConsumerStatefulWidget {
   const ProductsPage({super.key});
 
   @override
+  ConsumerState<ProductsPage> createState() => _ProductsPageState();
+}
+
+class _ProductsPageState extends ConsumerState<ProductsPage> {
+  @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() {
+      ref.read(productsProvider.notifier).loadProducts();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = ref.watch(productsProvider);
+
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -32,12 +50,18 @@ class ProductsPage extends StatelessWidget {
 
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-            /// Search
-            const SliverToBoxAdapter(child: ProductSearchBar()),
+            /// Search (abhi same rahega)
+            SliverToBoxAdapter(
+              child: ProductSearchBar(
+                onChanged: (value) {
+                  ref.read(productsProvider.notifier).searchProducts(value);
+                },
+              ),
+            ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-            /// Categories
+            /// Categories (abhi same rahengi)
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 42,
@@ -47,32 +71,22 @@ class ProductsPage extends StatelessWidget {
                   children: [
                     ProductFilterChip(
                       title: "All",
-                      isSelected: true,
-                      onTap: () {},
+                      isSelected: state.selectedCategory == null,
+                      onTap: () {
+                        ref.read(productsProvider.notifier).clearCategory();
+                      },
                     ),
 
-                    ProductFilterChip(
-                      title: "Vegetables",
-                      isSelected: false,
-                      onTap: () {},
-                    ),
-
-                    ProductFilterChip(
-                      title: "Leafy",
-                      isSelected: false,
-                      onTap: () {},
-                    ),
-
-                    ProductFilterChip(
-                      title: "Root",
-                      isSelected: false,
-                      onTap: () {},
-                    ),
-
-                    ProductFilterChip(
-                      title: "Fruits",
-                      isSelected: false,
-                      onTap: () {},
+                    ...state.categories.map(
+                      (category) => ProductFilterChip(
+                        title: category.name,
+                        isSelected: state.selectedCategory?.id == category.id,
+                        onTap: () {
+                          ref
+                              .read(productsProvider.notifier)
+                              .selectCategory(category);
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -81,25 +95,107 @@ class ProductsPage extends StatelessWidget {
 
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
+            /// Loading
+            if (state.isLoading)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            /// Empty
+            else if (state.filteredProducts.isEmpty)
+              const SliverFillRemaining(
+                child: Center(child: Text("No Products Found")),
+              )
             /// Product List
-            SliverList.builder(
-              itemCount: DummyProducts.products.length,
-              itemBuilder: (context, index) {
-                final product = DummyProducts.products[index];
+            else
+              SliverList.builder(
+                itemCount: state.filteredProducts.length,
+                itemBuilder: (context, index) {
+                  final product = state.filteredProducts[index];
 
-                return ProductCard(
-                  name: product.name,
-                  category: product.category,
-                  price: product.price,
-                  stock: product.stock,
-                  imageUrl: product.image,
-                  status: product.status,
-                  onTap: () {},
-                  onEdit: () {},
-                  onDelete: () {},
-                );
-              },
-            ),
+                  return ProductCard(
+                    product: product,
+                    onTap: () {},
+                    onEdit: () async {
+                      await showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (_) {
+                          return SelectedProductBottomSheet(
+                            product: product.product,
+                            initialPrice: product.vendorProduct.sellingPrice,
+                            initialStock: product.vendorProduct.stock,
+                            initialAvailability:
+                                product.vendorProduct.isAvailable,
+                            onSave:
+                                ({
+                                  required sellingPrice,
+                                  required stock,
+                                  required isAvailable,
+                                }) async {
+                                  await ref
+                                      .read(productsProvider.notifier)
+                                      .updateProduct(
+                                        vendorProductId:
+                                            product.vendorProduct.id!,
+                                        sellingPrice: sellingPrice,
+                                        stock: stock,
+                                        isAvailable: isAvailable,
+                                      );
+
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Product updated successfully",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                          );
+                        },
+                      );
+                    },
+                    onDelete: () async {
+                      final result = await showDialog<bool>(
+                        context: context,
+                        builder: (_) {
+                          return AlertDialog(
+                            title: const Text("Delete Product"),
+                            content: Text(
+                              "Are you sure you want to delete ${product.product.name}?",
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text("Cancel"),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text("Delete"),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+
+                      if (result == true) {
+                        await ref
+                            .read(productsProvider.notifier)
+                            .deleteProduct(product.vendorProduct.id!);
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Product deleted successfully"),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  );
+                },
+              ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],

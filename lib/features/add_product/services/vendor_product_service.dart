@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vender_app/features/add_product/models/vender_product_model.dart';
+import 'package:vender_app/shared/models/product_model.dart';
+import 'package:vender_app/shared/models/vendor_product_details_model.dart';
 
 class VendorProductService {
   VendorProductService();
@@ -125,6 +127,54 @@ class VendorProductService {
           .eq('id', vendorProductId);
     } catch (e) {
       throw Exception('Failed to delete vendor product: $e');
+    }
+  }
+
+  // vedner product full details ke sath.
+  Future<List<VendorProductDetailsModel>> getVendorProductsWithDetails(
+    String vendorId,
+  ) async {
+    try {
+      final response = await _supabase
+          .from('vendor_products')
+          .select('''
+          *,
+          products (
+          *,
+          categories(name)
+          )
+        ''')
+          .eq('vendor_id', vendorId);
+
+      return response.map<VendorProductDetailsModel>((e) {
+        return VendorProductDetailsModel(
+          vendorProduct: VendorProductModel.fromMap(e),
+          product: ProductModel.fromMap(e['products']),
+        );
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to load vendor products with details: $e');
+    }
+  }
+
+  Future<void> updateVendorProduct({
+    required String vendorProductId,
+    required double sellingPrice,
+    required int stock,
+    required bool isAvailable,
+  }) async {
+    try {
+      await _supabase
+          .from('vendor_products')
+          .update({
+            'selling_price': sellingPrice,
+            'stock': stock,
+            'is_available': isAvailable,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', vendorProductId);
+    } catch (e) {
+      throw Exception('Failed to update vendor product: $e');
     }
   }
 }

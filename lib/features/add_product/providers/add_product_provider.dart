@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vender_app/features/add_product/models/vender_product_model.dart';
+import 'package:vender_app/shared/models/category_model.dart';
+import 'package:vender_app/shared/models/product_model.dart';
 
-import '../models/category_model.dart';
-import '../models/product_model.dart';
 import '../services/category_service.dart';
 import '../services/product_service.dart';
 import '../services/vendor_product_service.dart';

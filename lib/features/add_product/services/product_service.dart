@@ -1,6 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../models/product_model.dart';
+import 'package:vender_app/shared/models/product_model.dart';
 
 class ProductService {
   ProductService();

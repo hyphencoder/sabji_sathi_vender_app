@@ -1,27 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:vender_app/core/utils/storage_helper.dart';
+import 'package:vender_app/shared/models/vendor_product_details_model.dart';
 
 import 'product_status_chip.dart';
 
 class ProductCard extends StatelessWidget {
   const ProductCard({
     super.key,
-    required this.name,
-    required this.category,
-    required this.price,
-    required this.stock,
-    required this.imageUrl,
-    required this.status,
+    required this.product,
     this.onTap,
     this.onEdit,
     this.onDelete,
   });
 
-  final String name;
-  final String category;
-  final double price;
-  final int stock;
-  final String imageUrl;
-  final ProductStatus status;
+  final VendorProductDetailsModel product;
 
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
@@ -50,7 +42,7 @@ class ProductCard extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(14),
                 child: Image.network(
-                  imageUrl,
+                  StorageHelper.getProductImageUrl(product.product.image),
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
@@ -75,7 +67,7 @@ class ProductCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name,
+                      product.product.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -86,7 +78,7 @@ class ProductCard extends StatelessWidget {
                     const SizedBox(height: 2),
 
                     Text(
-                      category,
+                      product.product.categoryName ?? "",
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -95,7 +87,7 @@ class ProductCard extends StatelessWidget {
                     const SizedBox(height: 8),
 
                     Text(
-                      "₹${price.toStringAsFixed(0)}",
+                      "₹${product.vendorProduct.sellingPrice.toStringAsFixed(0)}",
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.bold,
@@ -104,11 +96,22 @@ class ProductCard extends StatelessWidget {
 
                     const SizedBox(height: 4),
 
-                    Text("Stock : $stock", style: theme.textTheme.bodyMedium),
+                    Text(
+                      "Stock : ${product.vendorProduct.stock}",
+                      style: theme.textTheme.bodyMedium,
+                    ),
 
                     const SizedBox(height: 8),
 
-                    ProductStatusChip(status: status),
+                    ProductStatusChip(
+                      status: !product.vendorProduct.isAvailable
+                          ? ProductStatus.outOfStock
+                          : product.vendorProduct.stock == 0
+                          ? ProductStatus.outOfStock
+                          : product.vendorProduct.stock <= 10
+                          ? ProductStatus.lowStock
+                          : ProductStatus.inStock,
+                    ),
                   ],
                 ),
               ),
@@ -121,7 +124,6 @@ class ProductCard extends StatelessWidget {
                     onPressed: onEdit,
                     icon: const Icon(Icons.edit_outlined),
                   ),
-
                   IconButton(
                     onPressed: onDelete,
                     icon: Icon(Icons.delete_outline, color: colorScheme.error),
