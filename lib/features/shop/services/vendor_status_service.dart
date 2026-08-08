@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/app_snackbar.dart';
@@ -14,24 +15,23 @@ class VendorStatusService {
 
     switch (status) {
       case 'approved':
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.dashboard,
-          (route) => false,
-        );
+        context.go(AppRoutes.dashboard);
         break;
 
       case 'rejected':
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.shopRejected,
-          (route) => false,
-        );
+        context.go(AppRoutes.shopRejected);
+        break;
+
+      case 'blocked':
+        context.go(AppRoutes.shopBlocked);
         break;
 
       case 'pending':
+        context.go(AppRoutes.approvalPending);
+        break;
+
       default:
-        AppSnackBar.show(context, message: "Your shop is still under review.");
+        AppSnackBar.show(context, message: "Unable to fetch your shop status.");
         break;
     }
   }

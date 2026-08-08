@@ -1,21 +1,42 @@
 class VendorModel {
   final String id;
+
   final String shopName;
   final String ownerName;
+
   final String mobile;
   final String? email;
+
   final String? profileImage;
   final String? shopImage;
+
   final String address;
   final String city;
   final String state;
   final String pincode;
+
   final double? latitude;
   final double? longitude;
+
   final String? gstNumber;
   final String? panNumber;
+
   final String status;
   final bool shopCompleted;
+
+  // ==========================
+  // Admin Fields
+  // ==========================
+
+  final DateTime? approvedAt;
+  final String? approvedBy;
+
+  final DateTime? rejectedAt;
+  final String? rejectReason;
+
+  final DateTime? blockedAt;
+  final String? blockReason;
+
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -37,6 +58,16 @@ class VendorModel {
     this.panNumber,
     required this.status,
     required this.shopCompleted,
+
+    this.approvedAt,
+    this.approvedBy,
+
+    this.rejectedAt,
+    this.rejectReason,
+
+    this.blockedAt,
+    this.blockReason,
+
     this.createdAt,
     this.updatedAt,
   });
@@ -60,9 +91,29 @@ class VendorModel {
       panNumber: map['pan_number'],
       status: map['status'] ?? 'pending',
       shopCompleted: map['shop_completed'] ?? false,
+
+      approvedAt: map['approved_at'] == null
+          ? null
+          : DateTime.parse(map['approved_at']),
+
+      approvedBy: map['approved_by'],
+
+      rejectedAt: map['rejected_at'] == null
+          ? null
+          : DateTime.parse(map['rejected_at']),
+
+      rejectReason: map['reject_reason'],
+
+      blockedAt: map['blocked_at'] == null
+          ? null
+          : DateTime.parse(map['blocked_at']),
+
+      blockReason: map['block_reason'],
+
       createdAt: map['created_at'] == null
           ? null
           : DateTime.parse(map['created_at']),
+
       updatedAt: map['updated_at'] == null
           ? null
           : DateTime.parse(map['updated_at']),
@@ -88,6 +139,8 @@ class VendorModel {
       'pan_number': panNumber,
       'status': status,
       'shop_completed': shopCompleted,
+
+      // Admin fields intentionally NOT included
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
@@ -111,6 +164,16 @@ class VendorModel {
     String? panNumber,
     String? status,
     bool? shopCompleted,
+
+    DateTime? approvedAt,
+    String? approvedBy,
+
+    DateTime? rejectedAt,
+    String? rejectReason,
+
+    DateTime? blockedAt,
+    String? blockReason,
+
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -132,6 +195,16 @@ class VendorModel {
       panNumber: panNumber ?? this.panNumber,
       status: status ?? this.status,
       shopCompleted: shopCompleted ?? this.shopCompleted,
+
+      approvedAt: approvedAt ?? this.approvedAt,
+      approvedBy: approvedBy ?? this.approvedBy,
+
+      rejectedAt: rejectedAt ?? this.rejectedAt,
+      rejectReason: rejectReason ?? this.rejectReason,
+
+      blockedAt: blockedAt ?? this.blockedAt,
+      blockReason: blockReason ?? this.blockReason,
+
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

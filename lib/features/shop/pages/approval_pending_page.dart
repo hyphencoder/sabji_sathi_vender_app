@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:vender_app/features/shop/services/vendor_status_service.dart';
 
 import '../../../core/routes/app_routes.dart';
@@ -127,12 +128,7 @@ class ApprovalPendingPage extends StatelessWidget {
                           await AuthService.logout();
 
                           if (!context.mounted) return;
-
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            AppRoutes.login,
-                            (route) => false,
-                          );
+                          context.go(AppRoutes.login);
                         },
                       ),
                     ],

@@ -7,14 +7,14 @@ import '../../../shared/widgets/app_button.dart';
 import '../../auth/services/auth_service.dart';
 import '../services/shop_service.dart';
 
-class ShopRejectedPage extends StatefulWidget {
-  const ShopRejectedPage({super.key});
+class ShopBlockedPage extends StatefulWidget {
+  const ShopBlockedPage({super.key});
 
   @override
-  State<ShopRejectedPage> createState() => _ShopRejectedPageState();
+  State<ShopBlockedPage> createState() => _ShopBlockedPageState();
 }
 
-class _ShopRejectedPageState extends State<ShopRejectedPage> {
+class _ShopBlockedPageState extends State<ShopBlockedPage> {
   String? _reason;
 
   @override
@@ -29,7 +29,7 @@ class _ShopRejectedPageState extends State<ShopRejectedPage> {
     if (!mounted) return;
 
     setState(() {
-      _reason = vendor?.rejectReason;
+      _reason = vendor?.blockReason;
     });
   }
 
@@ -37,7 +37,7 @@ class _ShopRejectedPageState extends State<ShopRejectedPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Shop Rejected"),
+        title: const Text("Shop Blocked"),
         automaticallyImplyLeading: false,
         centerTitle: true,
       ),
@@ -54,10 +54,10 @@ class _ShopRejectedPageState extends State<ShopRejectedPage> {
                     children: [
                       CircleAvatar(
                         radius: 55,
-                        backgroundColor: Colors.red.shade100,
+                        backgroundColor: Colors.orange.shade100,
                         child: const Icon(
-                          Icons.cancel,
-                          color: Colors.red,
+                          Icons.block,
+                          color: Colors.orange,
                           size: 60,
                         ),
                       ),
@@ -65,7 +65,7 @@ class _ShopRejectedPageState extends State<ShopRejectedPage> {
                       const SizedBox(height: 24),
 
                       Text(
-                        "Shop Verification Rejected",
+                        "Shop Temporarily Blocked",
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
@@ -74,7 +74,7 @@ class _ShopRejectedPageState extends State<ShopRejectedPage> {
                       const SizedBox(height: 16),
 
                       const Text(
-                        "Unfortunately your shop could not be approved.",
+                        "Your shop has been temporarily blocked by the admin.",
                         textAlign: TextAlign.center,
                       ),
 
@@ -84,14 +84,14 @@ class _ShopRejectedPageState extends State<ShopRejectedPage> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(.08),
+                          color: Colors.orange.withOpacity(.08),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              "Reject Reason",
+                              "Block Reason",
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 10),

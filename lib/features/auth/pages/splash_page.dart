@@ -7,16 +7,24 @@ import '../../../../shared/widgets/app_loader.dart';
 import '../../../../shared/widgets/app_logo.dart';
 import '../providers/splash_provider.dart';
 
-class SplashPage extends ConsumerWidget {
+class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final splashState = ref.watch(splashProvider);
+  ConsumerState<SplashPage> createState() => _SplashPageState();
+}
 
-    splashState.whenData((status) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
+class _SplashPageState extends ConsumerState<SplashPage> {
+  @override
+  void initState() {
+    super.initState();
+
+    ref.listenManual<AsyncValue<SplashStatus>>(splashProvider, (
+      previous,
+      next,
+    ) {
+      next.whenData((status) {
+        if (!mounted) return;
 
         switch (status) {
           case SplashStatus.login:
@@ -39,11 +47,17 @@ class SplashPage extends ConsumerWidget {
             context.go(AppRoutes.shopRejected);
             break;
 
-          case SplashStatus.loading:
+          case SplashStatus.shopBlocked:
+            context.go(AppRoutes.shopBlocked);
             break;
         }
       });
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(splashProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -54,20 +68,26 @@ class SplashPage extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const AppLogo(size: 110),
+
                 const SizedBox(height: 24),
+
                 Text(
                   'Sabji Vendor',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 8),
+
                 Text(
                   'Fresh • Organic • Fast Delivery',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
+
                 const SizedBox(height: 40),
+
                 const AppLoader(),
               ],
             ),

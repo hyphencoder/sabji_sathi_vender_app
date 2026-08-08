@@ -10,6 +10,7 @@ class AppRoutes {
   static const String shopSetup = '/shop-setup';
   static const String approvalPending = '/approval-pending';
   static const String shopRejected = '/shop-rejected';
+  static const String shopBlocked = '/shop-blocked';
 
   static const String profile = '/profile';
   static const String settings = '/settings';

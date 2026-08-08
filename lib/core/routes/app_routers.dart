@@ -5,6 +5,7 @@ import 'package:vender_app/features/auth/pages/singup_page.dart';
 import 'package:vender_app/features/auth/pages/splash_page.dart';
 import 'package:vender_app/features/dashboard/pages/dashboard_page.dart';
 import 'package:vender_app/features/shop/pages/approval_pending_page.dart';
+import 'package:vender_app/features/shop/pages/shop_block_page.dart';
 import 'package:vender_app/features/shop/pages/shop_rejected_page.dart';
 import 'package:vender_app/features/shop/pages/shop_setup_page.dart';
 
@@ -54,6 +55,11 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.shopRejected,
         builder: (context, state) => const ShopRejectedPage(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.shopBlocked,
+        builder: (context, state) => const ShopBlockedPage(),
       ),
     ],
   );

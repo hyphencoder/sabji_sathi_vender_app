@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vender_app/features/auth/providers/splash_provider.dart';
 
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/validators/app_validators.dart';
@@ -101,9 +102,14 @@ class LoginPage extends ConsumerWidget {
                     try {
                       final success = await provider.login();
 
+                      debugPrint("Login Success : $success");
+
                       if (!context.mounted) return;
 
-                      if (success) {
+                      debugPrint("Going to Splash");
+
+                      if (success && context.mounted) {
+                        ref.invalidate(splashProvider);
                         context.go(AppRoutes.splash);
                       }
                     } on AuthException catch (e) {
