@@ -4,72 +4,59 @@ class CategoryModel {
     required this.name,
     required this.slug,
     this.imageUrl,
-    this.description,
     required this.priority,
     required this.isActive,
-    required this.createdAt,
-    required this.updatedAt,
   });
 
   final String id;
   final String name;
   final String slug;
   final String? imageUrl;
-  final String? description;
   final int priority;
   final bool isActive;
-  final DateTime createdAt;
-  final DateTime updatedAt;
 
-  factory CategoryModel.fromMap(Map<String, dynamic> map) {
+  factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
-      id: map['id'] as String,
-      name: map['name'] as String,
-      slug: map['slug'] as String,
-      imageUrl: map['image_url'] as String?,
-      description: map['description'] as String?,
-      priority: (map['priority'] ?? 0) as int,
-      isActive: (map['is_active'] ?? true) as bool,
-      createdAt: DateTime.parse(map['created_at'] as String),
-      updatedAt: DateTime.parse(map['updated_at'] as String),
+      id: json['id'] as String,
+      name: json['name'] as String,
+      slug: json['slug'] as String,
+      imageUrl: json['image_url'] as String?,
+      priority: (json['priority'] as num?)?.toInt() ?? 0,
+      isActive: json['is_active'] as bool? ?? true,
     );
   }
 
-  Map<String, dynamic> toMap() {
+  factory CategoryModel.fromMap(Map<String, dynamic> map) =>
+      CategoryModel.fromJson(map);
+
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
       'name': name,
       'slug': slug,
       'image_url': imageUrl,
-      'description': description,
       'priority': priority,
       'is_active': isActive,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
     };
   }
+
+  Map<String, dynamic> toMap() => toJson();
 
   CategoryModel copyWith({
     String? id,
     String? name,
     String? slug,
     String? imageUrl,
-    String? description,
     int? priority,
     bool? isActive,
-    DateTime? createdAt,
-    DateTime? updatedAt,
   }) {
     return CategoryModel(
       id: id ?? this.id,
       name: name ?? this.name,
       slug: slug ?? this.slug,
       imageUrl: imageUrl ?? this.imageUrl,
-      description: description ?? this.description,
       priority: priority ?? this.priority,
       isActive: isActive ?? this.isActive,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 

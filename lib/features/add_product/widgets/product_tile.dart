@@ -3,13 +3,20 @@ import 'package:vender_app/core/utils/storage_helper.dart';
 import 'package:vender_app/shared/models/product_model.dart';
 
 class ProductTile extends StatelessWidget {
-  const ProductTile({super.key, required this.product, this.onAdd});
+  const ProductTile({
+    super.key,
+    required this.product,
+    this.onAdd,
+    this.isAdded = false,
+  });
 
   final ProductModel product;
   final VoidCallback? onAdd;
+  final bool isAdded;
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("Building Tile : ${product.name}");
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -39,7 +46,6 @@ class ProductTile extends StatelessWidget {
                         if (loadingProgress == null) {
                           return child;
                         }
-
                         return _imagePlaceholder(colorScheme);
                       },
                       errorBuilder: (context, error, stackTrace) {
@@ -99,13 +105,47 @@ class ProductTile extends StatelessWidget {
 
             const SizedBox(width: 12),
 
-            FilledButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text("Add"),
+            /// Add Button with State
+            _buildAddButton(theme, colorScheme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddButton(ThemeData theme, ColorScheme colorScheme) {
+    if (isAdded) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.green.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.green),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 18),
+            const SizedBox(width: 4),
+            Text(
+              "Added",
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: Colors.green,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
+      );
+    }
+
+    return FilledButton.icon(
+      onPressed: onAdd,
+      icon: const Icon(Icons.add, size: 18),
+      label: const Text("Add"),
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(80, 36),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
       ),
     );
   }

@@ -18,6 +18,8 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
   void initState() {
     super.initState();
 
+    debugPrint("🔥 INIT STATE CALLED");
+
     Future.microtask(() {
       ref.read(addProductProvider.notifier).loadData();
     });
@@ -26,6 +28,13 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(addProductProvider);
+
+    // DEBUG
+    debugPrint("========== AddProductPage ==========");
+    debugPrint("Loading: ${state.isLoading}");
+    debugPrint("Categories: ${state.categories.length}");
+    debugPrint("Selected Category: ${state.selectedCategory?.name}");
+    debugPrint("Products: ${state.filteredProducts.length}");
 
     return Scaffold(
       appBar: AppBar(title: const Text("Add Product")),
@@ -65,8 +74,17 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
 
                 const SizedBox(height: 16),
 
-                /// Product List
-                Expanded(child: ProductList(products: state.filteredProducts)),
+                Expanded(
+                  child: Builder(
+                    builder: (context) {
+                      debugPrint(
+                        "Filtered Products = ${state.filteredProducts.length}",
+                      );
+
+                      return ProductList(products: state.filteredProducts);
+                    },
+                  ),
+                ),
               ],
             ),
     );

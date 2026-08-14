@@ -1,163 +1,269 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vender_app/features/add_product/models/vender_product_model.dart';
+import 'package:vender_app/features/add_product/providers/add_product_state.dart';
+import 'package:vender_app/features/add_product/services/category_service.dart';
+import 'package:vender_app/features/add_product/services/product_service.dart';
+import 'package:vender_app/features/add_product/services/vendor_product_service.dart';
 import 'package:vender_app/shared/models/category_model.dart';
-import 'package:vender_app/shared/models/product_model.dart';
-
-import '../services/category_service.dart';
-import '../services/product_service.dart';
-import '../services/vendor_product_service.dart';
 
 final addProductProvider =
-    StateNotifierProvider<AddProductNotifier, AddProductState>(
-      (ref) => AddProductNotifier(),
+    NotifierProvider<AddProductNotifier, AddProductState>(
+      AddProductNotifier.new,
     );
 
-class AddProductState {
-  const AddProductState({
-    this.isLoading = false,
-    this.categories = const [],
-    this.allProducts = const [],
-    this.filteredProducts = const [],
-    this.selectedCategory,
-    this.searchQuery = '',
-  });
-
-  final bool isLoading;
-  final List<CategoryModel> categories;
-  final List<ProductModel> allProducts;
-  final List<ProductModel> filteredProducts;
-  final CategoryModel? selectedCategory;
-  final String searchQuery;
-
-  AddProductState copyWith({
-    bool? isLoading,
-    List<CategoryModel>? categories,
-    List<ProductModel>? allProducts,
-    List<ProductModel>? filteredProducts,
-    CategoryModel? selectedCategory,
-    bool clearCategory = false,
-    String? searchQuery,
-  }) {
-    return AddProductState(
-      isLoading: isLoading ?? this.isLoading,
-      categories: categories ?? this.categories,
-      allProducts: allProducts ?? this.allProducts,
-      filteredProducts: filteredProducts ?? this.filteredProducts,
-      selectedCategory: clearCategory
-          ? null
-          : (selectedCategory ?? this.selectedCategory),
-      searchQuery: searchQuery ?? this.searchQuery,
-    );
-  }
-}
-
-class AddProductNotifier extends StateNotifier<AddProductState> {
-  AddProductNotifier() : super(const AddProductState());
-
+class AddProductNotifier extends Notifier<AddProductState> {
   final CategoryService _categoryService = CategoryService();
   final ProductService _productService = ProductService();
   final VendorProductService _vendorProductService = VendorProductService();
 
-  /// Load Categories & Products
-  /// Load Categories & Products
+  @override
+  AddProductState build() {
+    return const AddProductState();
+  }
+
+  //============================
+  // Load Data (Initial) - FIXED
+  //============================
+
   Future<void> loadData() async {
     try {
+      debugPrint("🔄 Loading data...");
       state = state.copyWith(isLoading: true);
 
-      final vendorId = Supabase.instance.client.auth.currentUser!.id;
-
+      // ✅ Load categories
       final categories = await _categoryService.getCategories();
-      final products = await _productService.getProducts();
+      debugPrint("✅ Categories loaded: ${categories.length}");
 
+      // ✅ Load vendor products
+      final vendorId = Supabase.instance.client.auth.currentUser!.id;
       final vendorProducts = await _vendorProductService.getVendorProducts(
         vendorId,
       );
+      debugPrint("✅ Vendor products loaded: ${vendorProducts.length}");
 
-      final addedProductIds = vendorProducts.map((e) => e.productId).toSet();
-
-      final availableProducts = products
-          .where((e) => !addedProductIds.contains(e.id))
-          .toList();
-
+      // ✅ Set selectedCategory = null (All Categories)
       state = state.copyWith(
         isLoading: false,
         categories: categories,
-        allProducts: availableProducts,
-        filteredProducts: availableProducts,
+        vendorProducts: vendorProducts,
+        selectedCategory: null, // ✅ Default "All"
+        allProducts: const [],
+        filteredProducts: const [],
+        searchQuery: '',
       );
+
+      // ✅ IMPORTANT: Load all products for "All Categories"
+      await _loadAllProducts();
+      debugPrint("✅ All products loaded for 'All Categories'");
     } catch (e) {
+      debugPrint("❌ Error loading data: $e");
       state = state.copyWith(isLoading: false);
       rethrow;
     }
   }
 
-  /// Search Products
-  void searchProducts(String query) {
+  //============================
+  // Load All Products - FIXED
+  //============================
+
+  Future<void> _loadAllProducts() async {
+    final vendorId = Supabase.instance.client.auth.currentUser!.id;
+
+    debugPrint("🔄 Loading all products...");
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final products = await _productService.getAvailableProducts(
+        vendorId: vendorId,
+        categoryId: null, // ✅ No category filter
+        searchQuery: state.searchQuery,
+      );
+
+      debugPrint("✅ Loaded all products: ${products.length}");
+
+      state = state.copyWith(
+        isLoading: false,
+        allProducts: products,
+        filteredProducts: products,
+      );
+    } catch (e) {
+      debugPrint("❌ Error loading all products: $e");
+      state = state.copyWith(isLoading: false);
+      rethrow;
+    }
+  }
+
+  //============================
+  // Select Category - FIXED
+  //============================
+
+  Future<void> selectCategory(CategoryModel? category) async {
+    debugPrint("🔄 Selecting category: ${category?.name ?? 'All'}");
+    if (category == null) {
+      state = state.copyWith(clearCategory: true, searchQuery: '');
+
+      debugPrint("📂 Loading all products for 'All Categories'");
+      await _loadAllProducts();
+    } else {
+      state = state.copyWith(selectedCategory: category, searchQuery: '');
+
+      debugPrint("📂 Loading products for category: ${category.name}");
+      await _reloadProducts();
+    }
+  }
+
+  //============================
+  // Reload Products (Category Specific)
+  //============================
+
+  Future<void> _reloadProducts() async {
+    final vendorId = Supabase.instance.client.auth.currentUser!.id;
+
+    debugPrint("🔄 Reloading products for category...");
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final products = await _productService.getAvailableProducts(
+        vendorId: vendorId,
+        categoryId: state.selectedCategory?.id,
+        searchQuery: state.searchQuery,
+      );
+
+      debugPrint("✅ Loaded products for category: ${products.length}");
+
+      state = state.copyWith(
+        isLoading: false,
+        allProducts: products,
+        filteredProducts: products,
+      );
+    } catch (e) {
+      debugPrint("❌ Error loading products: $e");
+      state = state.copyWith(isLoading: false);
+      rethrow;
+    }
+  }
+
+  //============================
+  // Search Products - FIXED
+  //============================
+
+  Future<void> searchProducts(String query) async {
+    debugPrint("🔍 Searching: '$query'");
     state = state.copyWith(searchQuery: query);
-    _applyFilters();
-  }
 
-  /// Select Category
-  void selectCategory(CategoryModel? category) {
-    state = state.copyWith(selectedCategory: category);
-    _applyFilters();
-  }
-
-  /// Clear Filters
-  void clearFilters() {
-    state = state.copyWith(
-      clearCategory: true,
-      searchQuery: '',
-      filteredProducts: state.allProducts,
-    );
-  }
-
-  /// Apply Filters
-  void _applyFilters() {
-    List<ProductModel> products = List.from(state.allProducts);
-
-    if (state.selectedCategory != null) {
-      products = products
-          .where((e) => e.categoryId == state.selectedCategory!.id)
-          .toList();
+    if (state.selectedCategory == null) {
+      // ✅ Search in all products
+      await _loadAllProducts();
+    } else {
+      // ✅ Search in category
+      await _reloadProducts();
     }
-
-    if (state.searchQuery.trim().isNotEmpty) {
-      final query = state.searchQuery.toLowerCase();
-
-      products = products
-          .where((e) => e.name.toLowerCase().contains(query))
-          .toList();
-    }
-
-    state = state.copyWith(filteredProducts: products);
   }
 
-  /// Save Vendor Product
-  /// Save Vendor Product
+  //============================
+  // Save Vendor Product
+  //============================
+
   Future<void> saveVendorProduct({
     required String vendorId,
     required String productId,
     required double sellingPrice,
+    required double mrp,
+    required double discountPrice,
     required int stock,
+    required int minOrderQty,
+    required int maxOrderQty,
+    required String sku,
     bool isAvailable = true,
   }) async {
     try {
+      debugPrint("🔄 Saving vendor product: $productId");
+      state = state.copyWith(isLoading: true);
+
       final model = VendorProductModel(
         vendorId: vendorId,
         productId: productId,
         sellingPrice: sellingPrice,
+        mrp: mrp,
+        discountPrice: discountPrice,
         stock: stock,
+        minOrderQty: minOrderQty,
+        maxOrderQty: maxOrderQty,
+        sku: sku,
+        status: 'pending',
         isAvailable: isAvailable,
+        isFeatured: false,
       );
 
       await _vendorProductService.saveVendorProduct(model);
+      debugPrint("✅ Vendor product saved");
 
-      // Refresh list so added product disappears
-      await loadData();
+      // ✅ Reload vendor products
+      await _loadVendorProducts();
+
+      // ✅ Reload products based on current selection
+      if (state.selectedCategory == null) {
+        await _loadAllProducts();
+      } else {
+        await _reloadProducts();
+      }
+
+      state = state.copyWith(isLoading: false);
+      debugPrint("✅ Products refreshed after save");
     } catch (e) {
+      debugPrint("❌ Error saving product: $e");
+      state = state.copyWith(isLoading: false);
       rethrow;
     }
   }
+
+  //============================
+  // Load Vendor Products
+  //============================
+
+  Future<void> _loadVendorProducts() async {
+    try {
+      final vendorId = Supabase.instance.client.auth.currentUser!.id;
+      final vendorProducts = await _vendorProductService.getVendorProducts(
+        vendorId,
+      );
+      state = state.copyWith(vendorProducts: vendorProducts);
+      debugPrint("✅ Vendor products loaded: ${vendorProducts.length}");
+    } catch (e) {
+      debugPrint("❌ Error loading vendor products: $e");
+    }
+  }
+
+  //============================
+  // Refresh - FIXED
+  //============================
+
+  Future<void> refresh() async {
+    debugPrint("🔄 Refreshing products...");
+    if (state.selectedCategory == null) {
+      await _loadAllProducts();
+    } else {
+      await _reloadProducts();
+    }
+  }
+
+  //============================
+  // Reset
+  //============================
+
+  void reset() {
+    debugPrint("🔄 Resetting state");
+    state = const AddProductState();
+  }
+
+  //============================
+  // Getters
+  //============================
+
+  bool get hasCategory => state.selectedCategory != null;
+  bool get hasProducts => state.filteredProducts.isNotEmpty;
+  bool get isSearching => state.searchQuery.trim().isNotEmpty;
+  int get totalProducts => state.filteredProducts.length;
 }

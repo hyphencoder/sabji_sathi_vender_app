@@ -101,16 +101,16 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 child: Center(child: CircularProgressIndicator()),
               )
             /// Empty
-            else if (state.filteredProducts.isEmpty)
+            else if (state.products.isEmpty)
               const SliverFillRemaining(
                 child: Center(child: Text("No Products Found")),
               )
             /// Product List
             else
               SliverList.builder(
-                itemCount: state.filteredProducts.length,
+                itemCount: state.products.length,
                 itemBuilder: (context, index) {
-                  final product = state.filteredProducts[index];
+                  final product = state.products[index];
 
                   return ProductCard(
                     product: product,
@@ -122,24 +122,34 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                         builder: (_) {
                           return SelectedProductBottomSheet(
                             product: product.product,
-                            initialPrice: product.vendorProduct.sellingPrice,
-                            initialStock: product.vendorProduct.stock,
-                            initialAvailability:
-                                product.vendorProduct.isAvailable,
+                            initialVendorProduct: product.vendorProduct,
                             onSave:
                                 ({
                                   required sellingPrice,
+                                  required mrp,
+                                  required discountPrice,
                                   required stock,
+                                  required minOrderQty,
+                                  required maxOrderQty,
+                                  required sku,
                                   required isAvailable,
                                 }) async {
                                   await ref
                                       .read(productsProvider.notifier)
                                       .updateProduct(
-                                        vendorProductId:
-                                            product.vendorProduct.id!,
-                                        sellingPrice: sellingPrice,
-                                        stock: stock,
-                                        isAvailable: isAvailable,
+                                        product.copyWith(
+                                          vendorProduct: product.vendorProduct
+                                              .copyWith(
+                                                sellingPrice: sellingPrice,
+                                                mrp: mrp,
+                                                discountPrice: discountPrice,
+                                                stock: stock,
+                                                minOrderQty: minOrderQty,
+                                                maxOrderQty: maxOrderQty,
+                                                sku: sku,
+                                                isAvailable: isAvailable,
+                                              ),
+                                        ),
                                       );
 
                                   if (context.mounted) {

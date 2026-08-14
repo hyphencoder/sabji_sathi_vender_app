@@ -1,65 +1,30 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vender_app/features/add_product/services/category_service.dart';
 import 'package:vender_app/features/add_product/services/vendor_product_service.dart';
 import 'package:vender_app/shared/models/category_model.dart';
 import 'package:vender_app/shared/models/vendor_product_details_model.dart';
 
-final productsProvider = StateNotifierProvider<ProductsNotifier, ProductsState>(
-  (ref) => ProductsNotifier(),
+import 'products_state.dart';
+
+final productsProvider = NotifierProvider<ProductsNotifier, ProductsState>(
+  ProductsNotifier.new,
 );
 
-class ProductsState {
-  const ProductsState({
-    this.isLoading = false,
-    this.categories = const [],
-    this.products = const [],
-    this.filteredProducts = const [],
-    this.selectedCategory,
-    this.searchQuery = '',
-    this.error,
-  });
-
-  final bool isLoading;
-  final List<CategoryModel> categories;
-  final List<VendorProductDetailsModel> products;
-  final List<VendorProductDetailsModel> filteredProducts;
-  final CategoryModel? selectedCategory;
-  final String searchQuery;
-  final String? error;
-
-  ProductsState copyWith({
-    bool? isLoading,
-    List<CategoryModel>? categories,
-    List<VendorProductDetailsModel>? products,
-    List<VendorProductDetailsModel>? filteredProducts,
-    CategoryModel? selectedCategory,
-    String? searchQuery,
-    String? error,
-    bool clearError = false,
-    bool clearCategory = false,
-  }) {
-    return ProductsState(
-      isLoading: isLoading ?? this.isLoading,
-      categories: categories ?? this.categories,
-      products: products ?? this.products,
-      filteredProducts: filteredProducts ?? this.filteredProducts,
-      selectedCategory: clearCategory
-          ? null
-          : (selectedCategory ?? this.selectedCategory),
-      searchQuery: searchQuery ?? this.searchQuery,
-      error: clearError ? null : (error ?? this.error),
-    );
-  }
-}
-
-class ProductsNotifier extends StateNotifier<ProductsState> {
-  ProductsNotifier() : super(const ProductsState());
-
+class ProductsNotifier extends Notifier<ProductsState> {
   final VendorProductService _vendorProductService = VendorProductService();
+
   final CategoryService _categoryService = CategoryService();
 
-  /// Load Products
+  @override
+  ProductsState build() {
+    return const ProductsState();
+  }
+
+  //==========================================
+  // Load Products
+  //==========================================
+
   Future<void> loadProducts() async {
     try {
       state = state.copyWith(isLoading: true, clearError: true);
@@ -70,91 +35,111 @@ class ProductsNotifier extends StateNotifier<ProductsState> {
 
       final products = await _vendorProductService.getVendorProductsWithDetails(
         vendorId,
+        categoryId: state.selectedCategory?.id,
+        searchQuery: state.searchQuery,
       );
 
       state = state.copyWith(
         isLoading: false,
         categories: categories,
         products: products,
-        filteredProducts: products,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  /// Refresh
+  //==========================================
+  // Refresh
+  //==========================================
+
   Future<void> refresh() async {
     await loadProducts();
   }
 
-  /// Select Category
-  void selectCategory(CategoryModel? category) {
+  //==========================================
+  // Select Category
+  //==========================================
+
+  Future<void> selectCategory(CategoryModel? category) async {
     state = state.copyWith(selectedCategory: category);
-    _applyFilters();
+
+    await loadProducts();
   }
 
-  /// Clear Category
-  void clearCategory() {
+  //==========================================
+  // Clear Category
+  //==========================================
+
+  Future<void> clearCategory() async {
     state = state.copyWith(clearCategory: true);
-    _applyFilters();
+
+    await loadProducts();
   }
 
-  /// Search Products
-  void searchProducts(String query) {
+  //==========================================
+  // Search Products
+  //==========================================
+
+  Future<void> searchProducts(String query) async {
     state = state.copyWith(searchQuery: query);
-    _applyFilters();
+
+    await loadProducts();
   }
 
-  /// Apply Filters
-  void _applyFilters() {
-    List<VendorProductDetailsModel> products = List.from(state.products);
+  //==========================================
+  // Delete Product
+  //==========================================
 
-    /// Category Filter
-    if (state.selectedCategory != null) {
-      products = products.where((e) {
-        return e.product.categoryId == state.selectedCategory!.id;
-      }).toList();
-    }
-
-    /// Search Filter
-    if (state.searchQuery.trim().isNotEmpty) {
-      final query = state.searchQuery.toLowerCase();
-
-      products = products.where((e) {
-        return e.product.name.toLowerCase().contains(query);
-      }).toList();
-    }
-
-    state = state.copyWith(filteredProducts: products);
-  }
-
-  /// Delete Product
   Future<void> deleteProduct(String vendorProductId) async {
     try {
+      state = state.copyWith(isLoading: true, clearError: true);
+
       await _vendorProductService.deleteVendorProduct(vendorProductId);
 
-      // Reload products after delete
       await loadProducts();
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(isLoading: false, error: e.toString());
+
       rethrow;
     }
   }
 
-  Future<void> updateProduct({
-    required String vendorProductId,
-    required double sellingPrice,
-    required int stock,
-    required bool isAvailable,
-  }) async {
-    await _vendorProductService.updateVendorProduct(
-      vendorProductId: vendorProductId,
-      sellingPrice: sellingPrice,
-      stock: stock,
-      isAvailable: isAvailable,
-    );
+  //==========================================
+  // Update Product
+  //==========================================
 
-    await loadProducts();
+  Future<void> updateProduct(VendorProductDetailsModel product) async {
+    try {
+      state = state.copyWith(isLoading: true, clearError: true);
+
+      await _vendorProductService.updateVendorProduct(product.vendorProduct);
+
+      await loadProducts();
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+
+      rethrow;
+    }
   }
+
+  //==========================================
+  // Reset Provider
+  //==========================================
+
+  void reset() {
+    state = const ProductsState();
+  }
+
+  //==========================================
+  // Helper Getters
+  //==========================================
+
+  bool get hasProducts => state.products.isNotEmpty;
+
+  bool get hasCategory => state.selectedCategory != null;
+
+  bool get isSearching => state.searchQuery.trim().isNotEmpty;
+
+  int get totalProducts => state.products.length;
 }

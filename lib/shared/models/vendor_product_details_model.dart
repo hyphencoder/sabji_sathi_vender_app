@@ -9,4 +9,14 @@ class VendorProductDetailsModel {
 
   final VendorProductModel vendorProduct;
   final ProductModel product;
+
+  VendorProductDetailsModel copyWith({
+    VendorProductModel? vendorProduct,
+    ProductModel? product,
+  }) {
+    return VendorProductDetailsModel(
+      vendorProduct: vendorProduct ?? this.vendorProduct,
+      product: product ?? this.product,
+    );
+  }
 }

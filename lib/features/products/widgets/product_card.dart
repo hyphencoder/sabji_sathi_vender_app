@@ -14,7 +14,6 @@ class ProductCard extends StatelessWidget {
   });
 
   final VendorProductDetailsModel product;
-
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
@@ -23,6 +22,7 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final vendorProduct = product.vendorProduct;
 
     return Card(
       elevation: 0,
@@ -38,30 +38,11 @@ class ProductCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              /// Product Image
               ClipRRect(
                 borderRadius: BorderRadius.circular(14),
-                child: Image.network(
-                  StorageHelper.getProductImageUrl(product.product.image),
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) {
-                    return Container(
-                      width: 80,
-                      height: 80,
-                      color: colorScheme.surfaceContainerHighest,
-                      child: Icon(
-                        Icons.image_not_supported_outlined,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    );
-                  },
-                ),
+                child: _productImage(colorScheme),
               ),
-
               const SizedBox(width: 14),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,50 +55,52 @@ class ProductCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 2),
-
                     Text(
-                      product.product.categoryName ?? "",
+                      [product.product.categoryName, product.product.unit]
+                          .whereType<String>()
+                          .join(' • '),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     Text(
-                      "₹${product.vendorProduct.sellingPrice.toStringAsFixed(0)}",
+                      'INR ${vendorProduct.sellingPrice.toStringAsFixed(0)}',
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 4),
-
                     Text(
-                      "Stock : ${product.vendorProduct.stock}",
+                      'MRP INR ${vendorProduct.mrp.toStringAsFixed(0)} • Discount INR ${vendorProduct.discountPrice.toStringAsFixed(0)}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Stock: ${vendorProduct.stock} • ${vendorProduct.isAvailable ? 'Available' : 'Unavailable'}',
                       style: theme.textTheme.bodyMedium,
                     ),
-
+                    const SizedBox(height: 4),
+                    Text(
+                      'Status: ${vendorProduct.status}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-
                     ProductStatusChip(
-                      status: !product.vendorProduct.isAvailable
+                      status: !vendorProduct.isAvailable || vendorProduct.stock == 0
                           ? ProductStatus.outOfStock
-                          : product.vendorProduct.stock == 0
-                          ? ProductStatus.outOfStock
-                          : product.vendorProduct.stock <= 10
+                          : vendorProduct.stock <= 10
                           ? ProductStatus.lowStock
                           : ProductStatus.inStock,
                     ),
                   ],
                 ),
               ),
-
               const SizedBox(width: 10),
-
               Column(
                 children: [
                   IconButton(
@@ -133,6 +116,30 @@ class ProductCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _productImage(ColorScheme colorScheme) {
+    final imageUrl = StorageHelper.getProductImageUrl(product.product.image);
+    if (imageUrl.isEmpty) return _imagePlaceholder(colorScheme);
+    return Image.network(
+      imageUrl,
+      width: 80,
+      height: 80,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _imagePlaceholder(colorScheme),
+    );
+  }
+
+  Widget _imagePlaceholder(ColorScheme colorScheme) {
+    return Container(
+      width: 80,
+      height: 80,
+      color: colorScheme.surfaceContainerHighest,
+      child: Icon(
+        Icons.image_not_supported_outlined,
+        color: colorScheme.onSurfaceVariant,
       ),
     );
   }

@@ -10,8 +10,6 @@ class ProductModel {
     this.image,
     required this.priority,
     required this.isActive,
-    required this.createdAt,
-    required this.updatedAt,
     this.categoryName,
   });
 
@@ -25,33 +23,30 @@ class ProductModel {
   final String? image;
   final int priority;
   final bool isActive;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  /// Join se aayega (products -> categories)
   final String? categoryName;
 
-  factory ProductModel.fromMap(Map<String, dynamic> map) {
+  factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
-      id: map['id'] as String,
-      categoryId: map['category_id'] as String,
-      name: map['name'] as String,
-      slug: map['slug'] as String,
-      shortDescription: map['short_description'] as String?,
-      description: map['description'] as String?,
-      unit: map['unit'] as String,
-      image: map['image'] as String?,
-      priority: map['priority'] ?? 0,
-      isActive: map['is_active'] ?? true,
-      createdAt: DateTime.parse(map['created_at']),
-      updatedAt: DateTime.parse(map['updated_at']),
-      categoryName: map['categories'] != null
-          ? map['categories']['name'] as String?
+      id: json['id'] as String,
+      categoryId: json['category_id'] as String,
+      name: json['name'] as String,
+      slug: json['slug'] as String,
+      shortDescription: json['short_description'] as String?,
+      description: json['description'] as String?,
+      unit: json['unit'] as String,
+      image: json['image'] as String?,
+      priority: (json['priority'] as num?)?.toInt() ?? 0,
+      isActive: json['is_active'] as bool? ?? true,
+      categoryName: json['categories'] != null
+          ? json['categories']['name'] as String?
           : null,
     );
   }
 
-  Map<String, dynamic> toMap() {
+  factory ProductModel.fromMap(Map<String, dynamic> map) =>
+      ProductModel.fromJson(map);
+
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
       'category_id': categoryId,
@@ -63,10 +58,10 @@ class ProductModel {
       'image': image,
       'priority': priority,
       'is_active': isActive,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
     };
   }
+
+  Map<String, dynamic> toMap() => toJson();
 
   ProductModel copyWith({
     String? id,
@@ -79,8 +74,6 @@ class ProductModel {
     String? image,
     int? priority,
     bool? isActive,
-    DateTime? createdAt,
-    DateTime? updatedAt,
     String? categoryName,
   }) {
     return ProductModel(
@@ -94,8 +87,6 @@ class ProductModel {
       image: image ?? this.image,
       priority: priority ?? this.priority,
       isActive: isActive ?? this.isActive,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
       categoryName: categoryName ?? this.categoryName,
     );
   }

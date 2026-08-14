@@ -8,34 +8,39 @@ class VendorProductService {
 
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  /// Add or Update Vendor Product
+  /// Save (Insert / Update)
   Future<VendorProductModel> saveVendorProduct(
     VendorProductModel product,
   ) async {
     try {
       final response = await _supabase
           .from('vendor_products')
-          .upsert(product.toMap(), onConflict: 'vendor_id,product_id')
+          .upsert(product.toJson(), onConflict: 'vendor_id,product_id')
           .select()
           .single();
 
       return VendorProductModel.fromMap(response);
+    } on PostgrestException catch (e) {
+      throw Exception(e.message);
     } catch (e) {
       throw Exception('Failed to save vendor product: $e');
     }
   }
 
-  /// Get All Products of Vendor
+  /// Get Vendor Products
   Future<List<VendorProductModel>> getVendorProducts(String vendorId) async {
     try {
       final response = await _supabase
           .from('vendor_products')
           .select()
-          .eq('vendor_id', vendorId);
+          .eq('vendor_id', vendorId)
+          .order('updated_at', ascending: false);
 
       return response
           .map<VendorProductModel>((e) => VendorProductModel.fromMap(e))
           .toList();
+    } on PostgrestException catch (e) {
+      throw Exception(e.message);
     } catch (e) {
       throw Exception('Failed to load vendor products: $e');
     }
@@ -59,62 +64,10 @@ class VendorProductService {
       }
 
       return VendorProductModel.fromMap(response);
+    } on PostgrestException catch (e) {
+      throw Exception(e.message);
     } catch (e) {
       throw Exception('Failed to load vendor product: $e');
-    }
-  }
-
-  /// Update Stock
-  Future<void> updateStock({
-    required String vendorProductId,
-    required int stock,
-  }) async {
-    try {
-      await _supabase
-          .from('vendor_products')
-          .update({
-            'stock': stock,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', vendorProductId);
-    } catch (e) {
-      throw Exception('Failed to update stock: $e');
-    }
-  }
-
-  /// Update Selling Price
-  Future<void> updatePrice({
-    required String vendorProductId,
-    required double sellingPrice,
-  }) async {
-    try {
-      await _supabase
-          .from('vendor_products')
-          .update({
-            'selling_price': sellingPrice,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', vendorProductId);
-    } catch (e) {
-      throw Exception('Failed to update price: $e');
-    }
-  }
-
-  /// Update Availability
-  Future<void> updateAvailability({
-    required String vendorProductId,
-    required bool isAvailable,
-  }) async {
-    try {
-      await _supabase
-          .from('vendor_products')
-          .update({
-            'is_available': isAvailable,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', vendorProductId);
-    } catch (e) {
-      throw Exception('Failed to update availability: $e');
     }
   }
 
@@ -125,26 +78,40 @@ class VendorProductService {
           .from('vendor_products')
           .delete()
           .eq('id', vendorProductId);
+    } on PostgrestException catch (e) {
+      throw Exception(e.message);
     } catch (e) {
       throw Exception('Failed to delete vendor product: $e');
     }
   }
 
-  // vedner product full details ke sath.
+  /// Get Vendor Products With Product Details
   Future<List<VendorProductDetailsModel>> getVendorProductsWithDetails(
-    String vendorId,
-  ) async {
+    String vendorId, {
+    String? categoryId,
+    String? searchQuery,
+  }) async {
     try {
-      final response = await _supabase
+      var query = _supabase
           .from('vendor_products')
           .select('''
-          *,
-          products (
-          *,
-          categories(name)
-          )
-        ''')
+            *,
+            products!vendor_products_product_id_fkey!inner(
+              *,
+              categories(name)
+            )
+          ''')
           .eq('vendor_id', vendorId);
+
+      if (categoryId != null) {
+        query = query.eq('products.category_id', categoryId);
+      }
+
+      if (searchQuery != null && searchQuery.trim().isNotEmpty) {
+        query = query.ilike('products.name', '%${searchQuery.trim()}%');
+      }
+
+      final response = await query.order('updated_at', ascending: false);
 
       return response.map<VendorProductDetailsModel>((e) {
         return VendorProductDetailsModel(
@@ -152,27 +119,28 @@ class VendorProductService {
           product: ProductModel.fromMap(e['products']),
         );
       }).toList();
+    } on PostgrestException catch (e) {
+      throw Exception(e.message);
     } catch (e) {
       throw Exception('Failed to load vendor products with details: $e');
     }
   }
 
-  Future<void> updateVendorProduct({
-    required String vendorProductId,
-    required double sellingPrice,
-    required int stock,
-    required bool isAvailable,
-  }) async {
+  /// Update Vendor Product
+  Future<VendorProductModel> updateVendorProduct(
+    VendorProductModel product,
+  ) async {
     try {
-      await _supabase
+      final response = await _supabase
           .from('vendor_products')
-          .update({
-            'selling_price': sellingPrice,
-            'stock': stock,
-            'is_available': isAvailable,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', vendorProductId);
+          .update(product.toVendorUpdateJson())
+          .eq('id', product.id!)
+          .select()
+          .single();
+
+      return VendorProductModel.fromMap(response);
+    } on PostgrestException catch (e) {
+      throw Exception(e.message);
     } catch (e) {
       throw Exception('Failed to update vendor product: $e');
     }
