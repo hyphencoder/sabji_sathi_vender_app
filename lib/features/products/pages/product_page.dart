@@ -22,7 +22,9 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   void initState() {
     super.initState();
 
+    debugPrint('PRODUCT PAGE INIT');
     Future.microtask(() {
+      debugPrint('PRODUCT PAGE LOAD START');
       ref.read(productsProvider.notifier).loadProducts();
     });
   }
@@ -31,6 +33,13 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(productsProvider);
 
+    debugPrint('PRODUCT UI BUILD - CATEGORIES: ${state.categories.length}');
+
+    debugPrint(
+      'PRODUCT UI BUILD - CATEGORY NAMES: '
+      '${state.categories.map((e) => e.name).toList()}',
+    );
+    debugPrint('PRODUCT UI CATEGORIES COUNT: ${state.categories.length}');
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -65,30 +74,34 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 42,
-                child: ListView(
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   scrollDirection: Axis.horizontal,
-                  children: [
-                    ProductFilterChip(
-                      title: "All",
-                      isSelected: state.selectedCategory == null,
-                      onTap: () {
-                        ref.read(productsProvider.notifier).clearCategory();
-                      },
-                    ),
-
-                    ...state.categories.map(
-                      (category) => ProductFilterChip(
-                        title: category.name,
-                        isSelected: state.selectedCategory?.id == category.id,
+                  child: Row(
+                    children: [
+                      ProductFilterChip(
+                        title: "All",
+                        isSelected: state.selectedCategory == null,
                         onTap: () {
-                          ref
-                              .read(productsProvider.notifier)
-                              .selectCategory(category);
+                          ref.read(productsProvider.notifier).clearCategory();
                         },
                       ),
-                    ),
-                  ],
+
+                      ...state.categories.map((category) {
+                        debugPrint('RENDER CATEGORY CHIP: ${category.name}');
+                        return ProductFilterChip(
+                          key: ValueKey(category.id),
+                          title: category.name,
+                          isSelected: state.selectedCategory?.id == category.id,
+                          onTap: () {
+                            ref
+                                .read(productsProvider.notifier)
+                                .selectCategory(category);
+                          },
+                        );
+                      }),
+                    ],
+                  ),
                 ),
               ),
             ),

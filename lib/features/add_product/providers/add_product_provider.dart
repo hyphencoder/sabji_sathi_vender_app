@@ -48,7 +48,7 @@ class AddProductNotifier extends Notifier<AddProductState> {
         isLoading: false,
         categories: categories,
         vendorProducts: vendorProducts,
-        selectedCategory: null, // ✅ Default "All"
+        clearCategory: true, // ✅ Default "All"
         allProducts: const [],
         filteredProducts: const [],
         searchQuery: '',

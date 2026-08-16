@@ -12,7 +12,7 @@ class VendorProductModel {
     required this.sku,
     required this.status,
     required this.isAvailable,
-    required this.isFeatured,
+    this.isFeatured = true,
     this.createdAt,
     this.updatedAt,
   });
@@ -73,7 +73,7 @@ class VendorProductModel {
       'sku': sku,
       'status': status,
       'is_available': isAvailable,
-      'is_featured': isFeatured,
+      'is_featured': true,
     };
   }
 
@@ -89,6 +89,7 @@ class VendorProductModel {
       'max_order_qty': maxOrderQty,
       'sku': sku,
       'is_available': isAvailable,
+      'is_featured': true,
     };
   }
 

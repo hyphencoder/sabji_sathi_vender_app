@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vender_app/features/add_product/models/vender_product_model.dart';
 import 'package:vender_app/shared/models/product_model.dart';
@@ -86,42 +87,116 @@ class VendorProductService {
   }
 
   /// Get Vendor Products With Product Details
+  /// Get Vendor Products With Product Details
+  ///
+  /// Product Page ke liye:
+  /// vendor_products
+  ///      ↓
+  /// current vendor ke products
+  ///      ↓
+  /// products table se details
+  ///      ↓
+  /// optional category filter
+  ///      ↓
+  /// optional search
   Future<List<VendorProductDetailsModel>> getVendorProductsWithDetails(
     String vendorId, {
     String? categoryId,
     String? searchQuery,
   }) async {
     try {
+      debugPrint('==========================================');
+      debugPrint('PRODUCT PAGE SERVICE');
+      debugPrint('Vendor ID: $vendorId');
+      debugPrint('Category ID: $categoryId');
+      debugPrint('Search: $searchQuery');
+      debugPrint('==========================================');
+
       var query = _supabase
           .from('vendor_products')
           .select('''
+          *,
+          products!fk_vendor_products_product!inner(
             *,
-            products!vendor_products_product_id_fkey!inner(
-              *,
-              categories(name)
-            )
-          ''')
+            categories(name)
+          )
+        ''')
           .eq('vendor_id', vendorId);
 
-      if (categoryId != null) {
+      // ==========================================
+      // CATEGORY FILTER
+      // ==========================================
+
+      if (categoryId != null && categoryId.isNotEmpty) {
         query = query.eq('products.category_id', categoryId);
       }
+
+      // ==========================================
+      // SEARCH FILTER
+      // ==========================================
 
       if (searchQuery != null && searchQuery.trim().isNotEmpty) {
         query = query.ilike('products.name', '%${searchQuery.trim()}%');
       }
 
+      // ==========================================
+      // FETCH
+      // ==========================================
+
       final response = await query.order('updated_at', ascending: false);
 
-      return response.map<VendorProductDetailsModel>((e) {
+      debugPrint('==========================================');
+      debugPrint('PRODUCT PAGE RAW RESPONSE');
+      debugPrint('RAW COUNT: ${response.length}');
+
+      debugPrint('==========================================');
+
+      // ==========================================
+      // MAP
+      // ==========================================
+
+      final products = response.map<VendorProductDetailsModel>((e) {
+        final data = Map<String, dynamic>.from(e);
+
+        final productData = Map<String, dynamic>.from(data['products'] as Map);
+
+        final vendorProduct = VendorProductModel.fromMap(data);
+
+        final product = ProductModel.fromMap(productData);
+
+        debugPrint(
+          'VENDOR PRODUCT: '
+          '${product.name} | '
+          'VendorProduct ID: ${vendorProduct.id} | '
+          'Product ID: ${product.id}',
+        );
+
         return VendorProductDetailsModel(
-          vendorProduct: VendorProductModel.fromMap(e),
-          product: ProductModel.fromMap(e['products']),
+          vendorProduct: vendorProduct,
+          product: product,
         );
       }).toList();
+
+      debugPrint('PRODUCT PAGE MAPPED COUNT: ${products.length}');
+
+      return products;
     } on PostgrestException catch (e) {
+      debugPrint('==========================================');
+      debugPrint('PRODUCT PAGE POSTGREST ERROR');
+      debugPrint('Message: ${e.message}');
+      debugPrint('Details: ${e.details}');
+      debugPrint('Hint: ${e.hint}');
+      debugPrint('Code: ${e.code}');
+      debugPrint('==========================================');
+
       throw Exception(e.message);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('==========================================');
+      debugPrint('PRODUCT PAGE SERVICE ERROR');
+      print(e);
+      print(stackTrace);
+      debugPrint('==========================================');
+
       throw Exception('Failed to load vendor products with details: $e');
     }
   }
